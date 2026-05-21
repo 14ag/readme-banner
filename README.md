@@ -9,7 +9,7 @@ Random rotating README banner backend for GitHub README files.
 - `GET /health` returns service status.
 - `GET /banner?key=YOUR_KEY` returns one WebP banner image.
 
-## Deployment Notes
+## [Deployment Notes] (DEPLOY.md)
 
 Set these environment variables in Vercel:
 
