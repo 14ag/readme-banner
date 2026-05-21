@@ -3,7 +3,7 @@ import random
 import pathlib
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, Header, HTTPException, Response
 from supabase import create_client, Client
 
 # load env vars from .env in local dev
@@ -21,10 +21,23 @@ CACHE_SECONDS = 35
 IMG_DIR = pathlib.Path(__file__).parent.parent / "src" / "img"
 
 
+def normalize_supabase_data_api_url(data_api_url: str) -> str:
+    # Supabase displays https://<project_ref>.supabase.co/rest/v1/.
+    # supabase-py wants https://<project_ref>.supabase.co.
+    url = data_api_url.strip().rstrip("/")
+    rest_suffix = "/rest/v1"
+    if url.endswith(rest_suffix):
+        url = url[:-len(rest_suffix)]
+    return url
+
+
 def get_db() -> Client:
-    # read credentials from environment
-    url = os.environ["SUPABASE_URL"]
-    key = os.environ["SUPABASE_KEY"]
+    url = normalize_supabase_data_api_url(os.environ["SUPABASE_DATA_API_URL"])
+    key = (
+        os.environ.get("SUPABASE_SECRET_KEY")
+        or os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+    )
+
     return create_client(url, key)
 
 
@@ -50,11 +63,21 @@ def serve_image(image_number: int) -> Response:
     )
 
 
+def verify_banner_header(x_banner_key: str) -> None:
+    expected_key = os.environ.get("BANNER_KEY", "")
+    if not x_banner_key or x_banner_key != expected_key:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+
 @app.get("/banner")
-async def get_banner(key: str = "") -> Response:
+async def get_banner(
+    key: str = "",
+    x_banner_key: str = Header(default="", alias="X-Banner-Key"),
+) -> Response:
     # --- step 1: verify the api key ---
     expected_key = os.environ.get("BANNER_KEY", "")
-    if not key or key != expected_key:
+    provided_key = x_banner_key or key
+    if not provided_key or provided_key != expected_key:
         raise HTTPException(status_code=403, detail="Forbidden")
 
     db = get_db()
@@ -113,6 +136,19 @@ async def get_banner(key: str = "") -> Response:
 
     # --- step 9: serve the image bytes ---
     return serve_image(image_number)
+
+
+@app.post("/reset")
+async def reset_banner_cycle(
+    x_banner_key: str = Header(default="", alias="X-Banner-Key"),
+):
+    verify_banner_header(x_banner_key)
+
+    db = get_db()
+    db.table("shown_banners").delete().gt("image_number", 0).execute()
+    db.table("rate_limit").delete().eq("id", 1).execute()
+
+    return {"status": "ok", "reset": True}
 
 
 @app.get("/health")
