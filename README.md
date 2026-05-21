@@ -20,4 +20,4 @@ Set these environment variables in Vercel:
 
 Set `VERCEL_URL` as a GitHub Actions repository variable. A trailing slash is OK.
 
-GitHub proxies README images through its camo CDN, so banner changes may appear after a few minutes.
+GitHub proxies README images through its camo CDN, so banner changes may appear after a few minutes
