@@ -1,4 +1,4 @@
-![Banner](https://YOUR_VERCEL_DOMAIN.vercel.app/banner?key=YOUR_KEY)
+![Banner](./assets/banner.webp)
 
 # Your Project Name
 
