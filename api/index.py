@@ -1,10 +1,11 @@
 import os
-import redis
 import random
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Response
+
+from data import Database
 
 
 # load env vars from .env in local dev
@@ -22,14 +23,11 @@ TOTAL_IMAGES = len(list(IMG_DIR.glob("*.webp")))
 CACHE_SECONDS = 35
 
 
-def get_db():
-    host = os.environ.get("REDIS_DATA_HOST")
-    port = os.environ.get("REDIS_DATA_PORT")
-    username= os.environ.get("REDIS_DATA_USERNAME")
-    password = os.environ.get("REDIS_DATA_PASSWORD")
-
-    return redis.Redis(host, port, username, password, decode_responses=True)
-
+host = os.environ.get("REDIS_DATA_HOST")
+port = os.environ.get("REDIS_DATA_PORT")
+username= os.environ.get("REDIS_DATA_USERNAME")
+password = os.environ.get("REDIS_DATA_PASSWORD")
+db = Database(host,port,username,password)
 
 def serve_image(image_number: int) -> Response:
     # build absolute path for the requested image
@@ -70,14 +68,16 @@ async def get_banner(
     if not provided_key or provided_key != expected_key:
         raise HTTPException(status_code=403, detail="Forbidden")
 
-    db = get_db()
+    
+    db_data = db.get_data()
+
     now = datetime.now(timezone.utc)
 
     # --- step 2: check the rate limit cache table ---
     # the rate_limit table holds one row with id=1
     # if that row exists and available_at is in the future
     # return the same image that was last served
-    rate_result = db["rate_limit"]
+    rate_result = db_data["rate_limit"]
 
     if rate_result:
 
@@ -94,7 +94,7 @@ async def get_banner(
             return serve_image(cached_number)
 
     # --- step 3: get all image numbers already shown in this cycle ---
-    shown_numbers = [i[image_number] for i in db["show_banners"]]
+    shown_numbers = [i[image_number] for i in db_data["show_banners"]]
 
     # --- step 4: compute which images are still unseen ---
     all_numbers = set(range(1, TOTAL_IMAGES + 1))
@@ -103,25 +103,25 @@ async def get_banner(
     # --- step 5: if all 30 images have been shown reset the cycle ---
     if not unseen:
         # delete all rows from shown_banners to start a fresh cycle
-        db["show_banners"]=[]
+        db_data["show_banners"]=[]
         unseen = list(all_numbers)
 
     # --- step 6: pick a random unseen image ---
     image_number = random.choice(unseen)
 
     # --- step 7: record this image as shown in the current cycle ---
-    db["shown_banners"].append({"image_number": image_number})
+    db_data["shown_banners"].append({"image_number": image_number})
 
     # --- step 8: update the rate limit cache row ---
     # upsert creates the row if id=1 does not exist or updates it if it does
     new_available_at = (now + timedelta(seconds=CACHE_SECONDS)).isoformat()
-    db["rate_limit"][0] = {
+    db_data["rate_limit"][0] = {
         "image_number": image_number,
         "available_at": new_available_at
     }
 
     # --- step 9: serve the image bytes ---
-    return serve_image(image_number)
+    return serve_image(image_number), db.set_data(db_data)
 
 
 @app.post("/reset")
@@ -130,9 +130,10 @@ async def reset_banner_cycle(
 ):
     verify_banner_header(x_banner_key)
 
-    db = get_db()
-    db["show_banners"]=[]
-    db["rate_limit"][0] = {}
+    db_data = db.get_data()
+    db_data["show_banners"]=[]
+    db_data["rate_limit"][0] = {}
+    db.set_data(db_data)
 
     return {"status": "ok", "reset": True}
 
