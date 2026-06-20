@@ -27,7 +27,6 @@ class Database:
         else:
             raw_data=self.client.get("readme-banner")
             data = json.loads(raw_data)
-            print(len(data["shown_banners"]))
             shown_banner_set=set(data["shown_banners"])
             data.update({"shown_banners":shown_banner_set})
         

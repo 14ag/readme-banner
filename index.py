@@ -57,9 +57,7 @@ def verify_banner_header(x_banner_key: str) -> None:
     if not x_banner_key or x_banner_key != expected_key:
         raise HTTPException(status_code=403, detail="Forbidden")
 
-@app.get("/favicon.png")
-async def favicon():
-    return health()
+
 
 @app.get("/banner")
 async def get_banner(
@@ -96,7 +94,6 @@ async def get_banner(
     else:
         unseen = list(unseen)
 
-    print(len(unseen))
     # --- pick a random unseen image record this image as shown in the current cycle ---
     image_ = random.choice(unseen)        
     db_data["shown_banners"].add(image_)
@@ -119,7 +116,8 @@ async def reset_banner_cycle(
 
     return {"status": "ok", "reset": True}
 
-
+@app.get("/")
+@app.get("/favicon.png")
 @app.get("/health")
 async def health():
     # simple liveness check endpoint for debugging
