@@ -1,6 +1,6 @@
 {
   "ignoreCommand": "echo \"$VERCEL_GIT_COMMIT_MESSAGE\" | grep -qi \"vercel\" && exit 1 || exit 0",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index.py" }
+    { "source": "/(.*)", "destination": "index.py" }
   ]
 }

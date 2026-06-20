@@ -21,18 +21,22 @@ class Database:
         
         if not self.client.exists("readme-banner"):
             data=dict(
-                show_banner=set(),
+                shown_banners=set(),
                 rate_limit=dict()
                 )
-
-            return data
         else:
             raw_data=self.client.get("readme-banner")
-            return json.loads(raw_data)
-
+            data = json.loads(raw_data)
+            print(len(data["shown_banners"]))
+            shown_banner_set=set(data["shown_banners"])
+            data.update({"shown_banners":shown_banner_set})
+        
+        return data
 
     def set_data(self, data: Dict[str, Any]) -> None:
-        self.client.set("readme-banner", json.dumps(data), nx=True)
+        shown_banner_arr=list(str(i) for i in data["shown_banners"])
+        data.update({"shown_banners":shown_banner_arr})
+        self.client.set("readme-banner", json.dumps(data))
 
 
     def close(self) -> None:

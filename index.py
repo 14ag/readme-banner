@@ -14,13 +14,15 @@ load_dotenv()
 app = FastAPI()
 
 # path to the images folder relative to this file
-IMG_DIR = Path(__file__).parents[1] / "src" / "img"
+IMG_DIR = Path(__file__).parents[0] / "src" / "img"
 
 # total number of banner images in src/img
-TOTAL_IMAGES = len(list(IMG_DIR.glob("*.webp")))
+IMAGES_paths = list(IMG_DIR.glob("*.webp"))
+
+IMAGES =[ i.name for i in IMAGES_paths ]
 
 # combined window in seconds: 30s rate limit + 5s post-response timeout
-CACHE_SECONDS = 35
+CACHE_SECONDS = 1
 
 
 host = os.environ.get("REDIS_DATA_HOST")
@@ -29,15 +31,14 @@ username= os.environ.get("REDIS_DATA_USERNAME")
 password = os.environ.get("REDIS_DATA_PASSWORD")
 db = Database(host,port,username,password)
 
-def serve_image(image_number: int) -> Response:
-    # build absolute path for the requested image
-    img_path = IMG_DIR / f"{image_number}.webp"
+def serve_image(img_: str) -> Response:
 
+    image_=IMG_DIR / img_
     # return 404 if the file is somehow missing
-    if not img_path.exists():
+    if not image_.exists():
         raise HTTPException(status_code=404, detail="Image not found")
 
-    img_bytes = img_path.read_bytes()
+    img_bytes = image_.read_bytes()
 
     return Response(
         content=img_bytes,
@@ -57,12 +58,6 @@ def verify_banner_header(x_banner_key: str) -> None:
         raise HTTPException(status_code=403, detail="Forbidden")
 
 
-def initialize(x):
-    repo_name=x
-    pass
-    
-
-
 @app.get("/banner")
 async def get_banner(
     repo_name: str= Header(default="readme-banner",alias="repo-name"),
@@ -72,10 +67,9 @@ async def get_banner(
     verify_banner_header(x_banner_key)
 
     db_data = db.get_data()
-    
     rate_result = db_data["rate_limit"]
 
-    available_at_str: str = rate_result[repo_name].setdefault(repo_name,datetime.now(timezone.utc).isoformat())
+    available_at_str: str = rate_result.setdefault(repo_name,datetime.now(timezone.utc).isoformat())
 
     available_at = datetime.fromisoformat(
         available_at_str.replace("Z", "+00:00")
@@ -85,26 +79,28 @@ async def get_banner(
     if now < available_at:
         raise HTTPException(status_code=403, detail="rate limit")
     
-    new_available_at = (now + timedelta(seconds=CACHE_SECONDS)).isoformat()
-
     # --- update the rate limit ---
+    new_available_at = (now + timedelta(seconds=CACHE_SECONDS)).isoformat()
     db_data["rate_limit"].update({repo_name:new_available_at})
     
-    shown_numbers = db_data["show_banners"]
-    all_numbers = set(range(1, TOTAL_IMAGES + 1))
-    unseen = list(all_numbers - shown_numbers)
-
     # --- if all 30 images have been shown reset the cycle ---
+    shown_images = db_data["shown_banners"]
+    all_images = set(IMAGES)
+    unseen = all_images.difference(shown_images)
     if not unseen:
-        unseen =  list(all_numbers)
-    
+        unseen = list(all_images)
+        db_data["shown_banners"].clear()
+    else:
+        unseen = list(unseen)
+
+    print(len(unseen))
     # --- pick a random unseen image record this image as shown in the current cycle ---
-    image_number = random.choice(unseen)        
-    db_data["shown_banners"].append(image_number)
+    image_ = random.choice(unseen)        
+    db_data["shown_banners"].add(image_)
 
     # --- serve the image update db ---
     db.set_data(db_data)
-    return serve_image(image_number)
+    return serve_image(image_)
 
 
 @app.post("/reset")
