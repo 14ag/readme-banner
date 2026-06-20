@@ -40,6 +40,7 @@ jobs:
           VERCEL_URL="$(printf '%s' "$VERCEL_URL" | sed 's:/*$::')"
           curl -sf \
             -H "X-Banner-Key: ${BANNER_KEY}" \
+            -H "repo-name: ${{ github.event.repository.name }}" \
             "${VERCEL_URL}/banner" \
             --output assets/banner.webp
 

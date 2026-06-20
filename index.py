@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Response
 
-from data import Database
+from api.data import Database
 
 
 # load env vars from .env in local dev
@@ -57,82 +57,65 @@ def verify_banner_header(x_banner_key: str) -> None:
         raise HTTPException(status_code=403, detail="Forbidden")
 
 
+def initialize(x):
+    repo_name=x
+    pass
+    
+
+
 @app.get("/banner")
 async def get_banner(
-    key: str = "",
-    x_banner_key: str = Header(default="", alias="X-Banner-Key"),
+    repo_name: str= Header(default="readme-banner",alias="repo-name"),
+    x_banner_key: str = Header(default="", alias="X-Banner-Key")
 ) -> Response:
     # --- step 1: verify the api key ---
-    expected_key = os.environ.get("BANNER_KEY", "")
-    provided_key = x_banner_key or key
-    if not provided_key or provided_key != expected_key:
-        raise HTTPException(status_code=403, detail="Forbidden")
+    verify_banner_header(x_banner_key)
 
-    
     db_data = db.get_data()
-
-    now = datetime.now(timezone.utc)
-
-    # --- step 2: check the rate limit cache table ---
-    # the rate_limit table holds one row with id=1
-    # if that row exists and available_at is in the future
-    # return the same image that was last served
+    
     rate_result = db_data["rate_limit"]
 
-    if rate_result:
+    available_at_str: str = rate_result[repo_name].setdefault(repo_name,datetime.now(timezone.utc).isoformat())
 
-        # parse the stored timestamp string into a timezone-aware datetime
-        available_at_str: str = rate_result["available_at"]
-        available_at = datetime.fromisoformat(
-            available_at_str.replace("Z", "+00:00")
+    available_at = datetime.fromisoformat(
+        available_at_str.replace("Z", "+00:00")
         )
+    
+    now = datetime.now(timezone.utc)
+    if now < available_at:
+        raise HTTPException(status_code=403, detail="rate limit")
+    
+    new_available_at = (now + timedelta(seconds=CACHE_SECONDS)).isoformat()
 
-        if now < available_at:
-            # still within the rate limit window
-            # return the cached image without touching shown_banners
-            cached_number: int = rate_result["image_number"]
-            return serve_image(cached_number)
-
-    # --- step 3: get all image numbers already shown in this cycle ---
-    shown_numbers = [i[image_number] for i in db_data["show_banners"]]
-
-    # --- step 4: compute which images are still unseen ---
+    # --- update the rate limit ---
+    db_data["rate_limit"].update({repo_name:new_available_at})
+    
+    shown_numbers = db_data["show_banners"]
     all_numbers = set(range(1, TOTAL_IMAGES + 1))
     unseen = list(all_numbers - shown_numbers)
 
-    # --- step 5: if all 30 images have been shown reset the cycle ---
+    # --- if all 30 images have been shown reset the cycle ---
     if not unseen:
-        # delete all rows from shown_banners to start a fresh cycle
-        db_data["show_banners"]=[]
-        unseen = list(all_numbers)
+        unseen =  list(all_numbers)
+    
+    # --- pick a random unseen image record this image as shown in the current cycle ---
+    image_number = random.choice(unseen)        
+    db_data["shown_banners"].append(image_number)
 
-    # --- step 6: pick a random unseen image ---
-    image_number = random.choice(unseen)
-
-    # --- step 7: record this image as shown in the current cycle ---
-    db_data["shown_banners"].append({"image_number": image_number})
-
-    # --- step 8: update the rate limit cache row ---
-    # upsert creates the row if id=1 does not exist or updates it if it does
-    new_available_at = (now + timedelta(seconds=CACHE_SECONDS)).isoformat()
-    db_data["rate_limit"][0] = {
-        "image_number": image_number,
-        "available_at": new_available_at
-    }
-
-    # --- step 9: serve the image bytes ---
-    return serve_image(image_number), db.set_data(db_data)
+    # --- serve the image update db ---
+    db.set_data(db_data)
+    return serve_image(image_number)
 
 
 @app.post("/reset")
 async def reset_banner_cycle(
+    repo_name: str= Header(default="readme-banner",alias="repo-name"),
     x_banner_key: str = Header(default="", alias="X-Banner-Key"),
 ):
     verify_banner_header(x_banner_key)
-
-    db_data = db.get_data()
-    db_data["show_banners"]=[]
-    db_data["rate_limit"][0] = {}
+    db_data=db.get_data()
+    db_data["shown_banners"].clear()
+    db_data["rate_limit"].update({repo_name:datetime.now(timezone.utc).isoformat()})
     db.set_data(db_data)
 
     return {"status": "ok", "reset": True}
