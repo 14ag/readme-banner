@@ -5,53 +5,30 @@ No local installs are required to deploy. You only need a browser.
 
 ---
 
-## Part 1 Supabase: Create the Database
+## Part 1 Redis: Create the Database
 
 ### Step 1.1 Create a new project
 
-1. Go to [https://supabase.com](https://supabase.com) and sign in
-2. Click **New project**
-3. Give it a name, e.g. `readme-banner`
-4. Choose a region close to you
-5. Set a database password (save it somewhere safe)
-6. Click **Create new project**
+Click the  button on your dashboard.Select the Fixed Plan / Essentials subscription and pick the free tier option (typically up to 30 MB).geographic region.Click Create Database. Your endpoint URI, username, and password will appear on the database configuration details page
 
-### Step 1.2 Create the tables
 
-1. In your project sidebar click **SQL Editor**
-2. Click **New query**
-3. Paste the SQL below into the editor
-4. Click **Run**
+1. Go to [Redis](https://cloud.redis.io) and sign in
+2. Click **New Database** button on your dashboard
+3. Give it the name `readme-banner`
+4. Choose your preferred cloud vendor (e.g., AWS, Google Cloud, or Azure)
+5. Choose a region close to you
+6. pick the free tier option (typically up to 30 MB)
+7. Click **Create database**
 
-```sql
-CREATE TABLE shown_banners (
-  id           SERIAL PRIMARY KEY,
-  image_number INTEGER NOT NULL CHECK (image_number BETWEEN 1 AND 30),
-  shown_at     TIMESTAMPTZ DEFAULT NOW()
-);
 
-CREATE TABLE rate_limit (
-  id           INTEGER PRIMARY KEY DEFAULT 1,
-  image_number INTEGER NOT NULL,
-  available_at TIMESTAMPTZ NOT NULL
-);
+### Step 1.2 Copy your credentials
 
-ALTER TABLE shown_banners ENABLE ROW LEVEL SECURITY;
-ALTER TABLE rate_limit     ENABLE ROW LEVEL SECURITY;
-```
-
-5. Go to **Table Editor** in the sidebar and confirm both tables appear
-
-### Step 1.3 Copy your credentials
-
-1. In the sidebar go to **Integrations** → **Data API**
-2. Copy and save your **API URL**
-   - It should look like `https://abcdefgh.supabase.co/rest/v1/`
-3. In the sidebar go to **Project Settings** → **API Keys**
-4. Copy and save **secret key**:
-   - It starts with `sb_secret_`
-
-You will need both in Part 3.
+1. In the sidebar go to **Databases** → **readme-banner**
+2. Click **Connect**
+3. on the flyout on the right, open the **Redis SDK clients** dropdown
+4. Choose **Python (Redis-py)** from the **Select your client** options
+5. Click on the copy button below the code snippet
+6. Paste the snippet into a text editor and save it for later. You will need the value of the host,port,username and password in Part 3.
 
 ---
 
@@ -99,7 +76,7 @@ commits that file back to the repository.
 2. Under the **Secrets** tab, click **New repository secret**
 3. Name: `BANNER_KEY`
 4. Value: the unique key you invented
-   - Use a long random value
+   - Use a memorable value
    - Letters, numbers, `_`, and `-` are easiest for browser testing
 5. Click **Add secret**
 
@@ -133,9 +110,11 @@ Add these three variables one by one:
 
 | Name          | Value                                      |
 |---------------|--------------------------------------------|
-| SUPABASE_DATA_API_URL | your Data API URL from Step 1.3    |
-| SUPABASE_SECRET_KEY | your secret key from Step 1.3         |
-| BANNER_KEY    | the same unique key you set in Step 2.3    |
+| REDIS_DATA_HOST | the value of variable "host" from the python snippet Step 1.3    |
+| REDIS_DATA_PASSWORD | the value of variable "password" from the python snippet Step 1.3         |
+| REDIS_DATA_PORT | the value of variable "port" from the python snippet Step 1.3         |
+| REDIS_DATA_USERNAME | the value of variable "username" from the python snippet Step 1.3         |
+| BANNER_KEY    | the same memorable value you set in Step 2.3    |
 
 Click **Add** after each one.
 
