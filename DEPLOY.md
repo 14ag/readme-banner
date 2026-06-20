@@ -129,7 +129,7 @@ Vercel will:
 
 
 When finished you will see **Congratulations!** and a live URL like:
-`https://readme-banner-abc123.vercel.app/`
+`https://readme-banner-abc123.vercel.app`
 
 ### Step 3.5 Add the Vercel URL to GitHub Actions
 
@@ -137,8 +137,8 @@ When finished you will see **Congratulations!** and a live URL like:
 2. Open the **Variables** tab
 3. Click **New repository variable**
 4. Name: `VERCEL_URL`
-5. Value: your Vercel project URL, e.g. `https://readme-banner-abc123.vercel.app/`
-   - Paste the URL as Vercel shows it
+5. Value: your Vercel project URL, e.g. `https://readme-banner-abc123.vercel.app`
+   - Paste the URL then remove the trailing slash
 6. Click **Add variable**
 
 ---

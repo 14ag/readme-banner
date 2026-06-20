@@ -57,6 +57,9 @@ def verify_banner_header(x_banner_key: str) -> None:
     if not x_banner_key or x_banner_key != expected_key:
         raise HTTPException(status_code=403, detail="Forbidden")
 
+@app.get("/favicon.png")
+async def favicon():
+    return health()
 
 @app.get("/banner")
 async def get_banner(
