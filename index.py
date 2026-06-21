@@ -15,7 +15,6 @@ app = FastAPI()
 
 # path to the images folder relative to this file
 IMG_DIR = Path(__file__).parents[0] / "src" / "img"
-ICO_DIR = Path(__file__).parents[0] / "public" / "favicon.ico"
 
 # total number of banner images in src/img
 IMAGES_paths = list(IMG_DIR.glob("*.webp"))
@@ -116,17 +115,6 @@ async def reset_banner_cycle(
     db.set_data(db_data)
 
     return {"status": "ok", "reset": True}
-
-
-@app.get("/favicon.png", include_in_schema=False)
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
-    # return favicon
-    img_bytes = ICO_DIR.read_bytes()
-    return Response(
-        content=img_bytes,
-        media_type="image/ico",
-    )
 
 
 @app.get("/")
