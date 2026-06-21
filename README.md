@@ -6,9 +6,9 @@ this system is a backend that rotatates the banner image on GitHub README files.
 
 ## Endpoints
 
-- `GET /health` returns service status.
-- `GET /banner` returns one WebP banner image.
-- `POST /reset` resets the cycle when called with `X-Banner-Key`.
+- `GET /health` check service status
+- `GET /banner` gets one cool banner image
+- `POST /reset` resets the cycle 
 
 read [Deployment Notes](DEPLOY.md) for setup instructions
 
