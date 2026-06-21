@@ -1,6 +1,6 @@
 # Deployment Guide: Random README Banner
 
-You need three accounts: **GitHub**, **Supabase**, and **Vercel**.
+You need three accounts: **GitHub**, **Redis**, and **Vercel**.
 No local installs are required to deploy. You only need a browser.
 
 ---
@@ -12,7 +12,7 @@ No local installs are required to deploy. You only need a browser.
 Click the  button on your dashboard.Select the Fixed Plan / Essentials subscription and pick the free tier option (typically up to 30 MB).geographic region.Click Create Database. Your endpoint URI, username, and password will appear on the database configuration details page
 
 
-1. Go to [Redis](https://cloud.redis.io) and sign in
+1. Go to [https://cloud.redis.io](https://cloud.redis.io) and sign in
 2. Click **New Database** button on your dashboard
 3. Give it the name `readme-banner`
 4. Choose your preferred cloud vendor (e.g., AWS, Google Cloud, or Azure)
@@ -124,7 +124,7 @@ Click **Deploy**.
 
 Vercel will:
 - Clone your repository
-- Install the packages from `requirements.txt`, including `supabase==2.30.0`
+- Install the packages from `requirements.txt`
 - Deploy the FastAPI app as a serverless function
 
 
@@ -168,11 +168,12 @@ The workflow also runs every 12 hours and on pushes to `main`.
 
 ### Step 4.3 How rotation works
 
-The workflow trims trailing slashes from `VERCEL_URL`, then calls:
+The workflow calls:
 
 ```text
 GET https://YOUR_VERCEL_DOMAIN.vercel.app/banner
 X-Banner-Key: BANNER_KEY
+repo-name: REPO_NAME
 ```
 
 It saves the response to `assets/banner.webp`, commits the file only when it
@@ -197,18 +198,8 @@ You should see:
 {"status": "ok"}
 ```
 
-### Step 5.2 Test the private banner endpoint
 
-Open this URL in your browser (replace the values):
-
-```
-https://YOUR_VERCEL_DOMAIN.vercel.app/banner?key=YOUR_BANNER_KEY_VALUE
-```
-
-You should see a WebP image displayed in your browser.
-
-
-### Step 5.3 Verify the GitHub Actions banner
+### Step 5.2 Verify the GitHub Actions banner
 
 1. Go to **Actions** → **Update Banner**
 2. Run the workflow manually
@@ -216,11 +207,10 @@ You should see a WebP image displayed in your browser.
 4. Confirm `assets/banner.webp` exists in the repository
 5. Confirm the rendered README shows the banner without a key in the image URL
 
-### Step 5.4 Check Supabase after the first request
+### Step 5.3 Check Redis db after the first request
 
-1. Go to Supabase → **Table Editor** → `shown_banners`
-2. You should see one row with an `image_number` between 1 and 30
-3. Go to `rate_limit` → you should see one row with `id = 1`
+1. Go to redis dashboard → **readme-banner** → `metrics`
+2. You should see metric spikes
 
 If all of the above pass, the system is working correctly.
 
@@ -280,12 +270,10 @@ The next banner request starts a fresh cycle from all 30 images.
 | Banner shows 403 | Wrong key in URL | Check BANNER_KEY in Vercel env vars |
 | Update Banner action calls `/banner` with no domain | VERCEL_URL was added as a secret instead of a variable, or was not added | Add VERCEL_URL under Actions Variables |
 | Update Banner action shows 403 | GitHub BANNER_KEY secret does not match Vercel BANNER_KEY | Update the GitHub secret or Vercel env var so they match |
-| Banner shows 500 | Supabase credentials wrong | Check SUPABASE_DATA_API_URL and SUPABASE_SECRET_KEY |
 | Banner shows 404 | Image file missing | Confirm `src/img/1.webp` through `30.webp` are in the repo |
 | README banner missing | assets/banner.webp has not been created yet | Run the Update Banner workflow manually |
 | Banner not changing | 35-second backend cache window or same fetched image file | Wait 35 seconds, then rerun the Update Banner workflow |
 | Reset Banner Cycle action shows 403 | GitHub BANNER_KEY secret does not match Vercel BANNER_KEY | Update the GitHub secret or Vercel env var so they match |
 | Reset Banner Cycle action calls `/reset` with no domain | VERCEL_URL was added as a secret instead of a variable, or was not added | Add VERCEL_URL under Actions Variables |
 | Deploy fails | `requirements.txt` error | Check Python package names and versions are spelled correctly |
-| Rate limit row not updating | Supabase key is publishable/anon or wrong | Use a backend-only secret key or service_role key in Vercel |
 | Update Banner action cannot push | Branch protection blocks GitHub Actions commits | Allow GitHub Actions to push to `main`, or switch the workflow to open a pull request |

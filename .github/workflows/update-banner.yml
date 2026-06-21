@@ -30,7 +30,7 @@ jobs:
       - name: Fetch banner image from backend
         # VERCEL_URL is a GitHub Actions Variable (not secret) - set it in
         # Settings > Secrets and variables > Actions > Variables tab
-        # example value: https://readme-banner-abc123.vercel.app/
+        # example value: https://readme-banner-abc123.vercel.app
         # BANNER_KEY is a GitHub Actions Secret - set it in the Secrets tab
         # it must match the BANNER_KEY set in Vercel environment variables
         env:
