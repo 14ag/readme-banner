@@ -3,7 +3,7 @@ name: Update Banner
 on:
   schedule:
     # runs every 24 hours
-    - cron: '0 */24 * * *'
+    - cron: "0 */24 * * *"
   workflow_dispatch:
   push:
     branches:
@@ -11,7 +11,7 @@ on:
     paths-ignore:
       # ignore pushes that only change the banner asset
       # prevents this workflow from triggering itself in a loop
-      - 'assets/**'
+      - "assets/**"
 
 permissions:
   contents: write
