@@ -3,7 +3,8 @@
 You need three accounts: **GitHub**, **Redis**, and **Vercel**.
 No local installs are required to deploy. You only need a browser.
 
----
+<br>
+<br>
 
 ## Part 1 Redis: Create the Database
 
@@ -30,7 +31,8 @@ Click the  button on your dashboard.Select the Fixed Plan / Essentials subscript
 5. Click on the copy button below the code snippet
 6. Paste the snippet into a text editor and save it for later. You will need the value of the host,port,username and password in Part 3.
 
----
+<br>
+<br>
 
 ## Part 2 GitHub: Repository setup
 
@@ -80,7 +82,24 @@ commits that file back to the repository.
    - Letters, numbers, `_`, and `-` are easiest for browser testing
 5. Click **Add secret**
 
----
+
+**or**
+
+You can also configure the repository variable using the `gh cli` tool. If you're in the repository directory, run:
+
+```bash
+echo "your-secret-value" | gh secret set BANNER_KEY
+```
+
+If you're not in the repository directory:
+
+
+```bash
+echo "your-secret-value" | gh secret set BANNER_KEY --repo OWNER/REPO
+```
+
+<br>
+<br>
 
 ## Part 3 Vercel: Deploy the Backend
 
@@ -141,13 +160,28 @@ When finished you will see **Congratulations!** and a live URL like:
    - Paste the URL then remove the trailing slash
 6. Click **Add variable**
 
----
+**or**
+
+You can also configure the repository variable using the `gh cli` tool. If you're in the repository directory, run:
+
+```bash
+gh variable set VERCEL_URL --body "your-value"
+```
+
+Or, if you're not in the repository directory:
+
+```bash
+gh variable set VERCEL_URL --body "your-value" --repo OWNER/REPO
+```
+
+<br>
+<br>
 
 ## Part 4 Generate the README Banner Asset
 
 ### Step 4.1 Confirm the README image path
 
-The README should use the committed banner asset, not the backend URL:
+The README should use the committed banner asset, not the backend URL. this will be added automatically by the workflow, so you do not need to add it manually:
 
 ```markdown
 ![Banner](./assets/banner.webp)
@@ -164,7 +198,7 @@ After `BANNER_KEY` and `VERCEL_URL` are configured:
 3. Wait for the run to finish
 4. Confirm the workflow commits `assets/banner.webp`
 
-The workflow also runs every 12 hours and on pushes to `main`.
+The workflow also runs every 12 hours and on pushes to `main branch` .
 
 ### Step 4.3 How rotation works
 
@@ -180,7 +214,8 @@ It saves the response to `assets/banner.webp`, commits the file only when it
 changes, and pushes the commit to `main`. The README then displays the committed
 file directly.
 
----
+<br>
+<br>
 
 ## Part 5 Verify Everything Works
 
@@ -214,7 +249,8 @@ You should see:
 
 If all of the above pass, the system is working correctly.
 
----
+<br>
+<br>
 
 ## Part 6 Future Updates
 
@@ -256,12 +292,12 @@ The next banner request starts a fresh cycle from all 30 images.
 
 
 ### To add the banner to another repository
-1. Add the same README image tag to the new repository, `![Banner](./assets/banner.webp)`
 2. Add the same `BANNER_KEY` as a secret to the new repository's GitHub Actions secrets
 3. Add the same `VERCEL_URL` as a variable to the new repository's GitHub Actions variables
-4. Add the same runners to the new repository's GitHub Actions workflows, in `.github/workflows/update_banner.yml` and `.github/workflows/reset_banner_cycle.yml`:
+4. Add the same runners to the new repository's GitHub Actions workflows, in `.github/workflows/update_banner.yml`, `.github\workflows\release-notes-banner.yml` and `.github/workflows/reset_banner_cycle.yml`:
 
----
+<br>
+<br>
 
 ## Troubleshooting
 
