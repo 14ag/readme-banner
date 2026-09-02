@@ -1,0 +1,7 @@
+name: 'README Banner Actions'
+description: 'Dynamic banner management for your README—automatically rotate, update, and display banners'
+author: '14ag'
+
+branding:
+  icon: 'image'
+  color: 'blue'
