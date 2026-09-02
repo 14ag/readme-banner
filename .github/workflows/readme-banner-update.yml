@@ -1,9 +1,17 @@
 name: Update Banner
 
 on:
+  workflow_call:
+    inputs:
+      VERCEL_URL:
+        required: true
+        type: string
+    secrets:
+      BANNER_KEY:
+       required: true
   schedule:
-    # runs every 24 hours
-    - cron: '0 */24 * * *'
+    # runs every 24 hours at 0900hrs
+    - cron: '0 9 * * *'
   workflow_dispatch:
   push:
     branches:
