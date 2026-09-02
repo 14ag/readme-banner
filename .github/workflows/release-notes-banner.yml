@@ -1,6 +1,7 @@
 name: Update Latest Release Notes
 
 on:
+  workflow_call:
   release:
     types: [published]
 
