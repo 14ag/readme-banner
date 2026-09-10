@@ -1,0 +1,12 @@
+name: Reset Banner Cycle
+
+on:
+ workflow_dispatch:
+
+jobs:
+ call-readme-banner-reset:
+  uses: 14ag/readme-banner/.github/workflows/readme-banner-reset.yml@main
+  with:
+   VERCEL_URL: ${{ vars.VERCEL_URL }}
+  secrets:
+   BANNER_KEY: ${{ secrets.BANNER_KEY }}

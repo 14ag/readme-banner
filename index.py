@@ -10,7 +10,7 @@ from api.data import Database
 # load env vars from .env in local dev
 load_dotenv()
 
-app = FastAPI()
+app = FastAPI(title="readme banner")
 
 # path to the images folder relative to this file
 IMG_DIR = Path(__file__).parents[0] / "src" / "img"
@@ -21,7 +21,7 @@ IMAGES_paths = list(IMG_DIR.glob("*.webp"))
 IMAGES = [i.name for i in IMAGES_paths]
 
 # combined window in seconds: 30s rate limit + 5s post-response timeout
-CACHE_SECONDS = 1
+RATE_LIMIT_TIME = 1
 
 
 value_bindings = {
@@ -83,7 +83,7 @@ async def get_banner(
         raise HTTPException(status_code=403, detail="rate limit")
 
     # --- update the rate limit ---
-    new_available_at = (now + timedelta(seconds=CACHE_SECONDS)).isoformat()
+    new_available_at = (now + timedelta(seconds=RATE_LIMIT_TIME)).isoformat()
     db_data["rate_limit"].update({repo_name: new_available_at})
 
     # --- if all 30 images have been shown reset the cycle ---

@@ -1,0 +1,12 @@
+name: Update Latest Release Notes
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  call-release-notes-banner:
+    uses: 14ag/readme-banner/.github/workflows/release-notes-banner.yml@main
