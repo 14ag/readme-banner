@@ -9,7 +9,7 @@ on:
         type: string
     secrets:
       BANNER_KEY:
-       required: true
+        required: true
 
 jobs:
   reset-banner:

@@ -9,17 +9,17 @@ on:
         type: string
     secrets:
       BANNER_KEY:
-       required: true
+        required: true
   schedule:
     # runs every 24 hours at 0900hrs
-    - cron: '0 9 * * *'
+    - cron: "0 9 * * *"
   push:
     branches:
       - main
     paths-ignore:
       # ignore pushes that only change the banner asset
       # prevents this workflow from triggering itself in a loop
-      - 'assets/**'
+      - "assets/**"
 
 permissions:
   contents: write
@@ -68,7 +68,7 @@ jobs:
       - name: Commit and push if anything changed
         run: |
           COMMIT_MESSAGE="chore: rotate banner"
-          
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -77,9 +77,9 @@ jobs:
           git diff --cached --quiet && exit 0
 
           LAST_COMMIT_MESSAGE=$(git log -1 --pretty=format:%s)
-          
+
           if [ "$LAST_COMMIT_MESSAGE" = "$COMMIT_MESSAGE" ]; then
-            git commit --amend --no-edit
+            git commit --amend --no-edit --allow-empty
             git push --force-with-lease
           else
             git commit -m "$COMMIT_MESSAGE"
