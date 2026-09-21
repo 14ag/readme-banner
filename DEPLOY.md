@@ -264,8 +264,13 @@ If all of the above pass, the system is working correctly.
 
 1. Go to Vercel → your project → **Settings** → **Environment Variables**
 2. Edit the `BANNER_KEY` value
-3. Go to GitHub → repository → **Settings** → **Secrets and variables** → **Actions**
-4. Update the `BANNER_KEY` secret to the same value
+3. Go to GitHub → repository → **Settings** → **Secrets and variables** → **Actions** or run:
+
+```bash
+gh secret set BANNER_KEY
+```
+
+4. Update the `BANNER_KEY` secret to the same value as the one in Vercel
 5. Go to **Deployments** in Vercel and redeploy the latest deployment for the change to take effect
 6. Run the **Update Banner** workflow manually
 
@@ -292,9 +297,11 @@ The next banner request starts a fresh cycle from all 30 images.
 
 
 ### To add the banner to another repository
-2. Add the same `BANNER_KEY` as a secret to the new repository's GitHub Actions secrets
-3. Add the same `VERCEL_URL` as a variable to the new repository's GitHub Actions variables
-4. Add the same runners to the new repository's GitHub Actions workflows, in `.github/workflows/update_banner.yml`, `.github\workflows\release-notes-banner.yml` and `.github/workflows/reset_banner_cycle.yml`:
+from the repository as the working dir:
+1. Copy the runners from readme-banner/src/workflows to the new repository's GitHub Actions workflows folder (.github/workflows)
+2. Add the same `BANNER_KEY` as a secret to the new repository's GitHub Actions secrets `gh secret set BANNER_KEY`
+3. Add the same `VERCEL_URL` as a variable to the new repository's GitHub Actions variables `gh variable set VERCEL_URL`
+
 
 <br>
 <br>
