@@ -22,12 +22,13 @@ jobs:
 
             if (latest.id === context.payload.release.id) {
               const body = context.payload.release.body || '';
-              if (!body.startsWith('![Banner](./assets/banner.webp)')) {
+              const banner = `![Banner](https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/banner/banner.webp)`;
+              if (!body.startsWith(banner)) {
                 await github.rest.repos.updateRelease({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   release_id: latest.id,
-                  body: '![Banner](./assets/banner.webp)\n\n' + body,
+                  body: banner + '\n\n' + body,
                 });
               }
             }

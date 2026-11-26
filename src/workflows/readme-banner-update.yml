@@ -8,10 +8,6 @@ on:
    push:
       branches:
          - main
-      paths-ignore:
-         # ignore pushes that only change the banner asset
-         # prevents this workflow from triggering itself in a loop
-         - "assets/**"
 
 permissions:
    contents: write

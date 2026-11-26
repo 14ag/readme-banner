@@ -1,4 +1,4 @@
-![Banner](./assets/banner.webp)
+![Banner](https://raw.githubusercontent.com/14ag/readme-banner/banner/banner.webp)
 
 # Your Project Name
 

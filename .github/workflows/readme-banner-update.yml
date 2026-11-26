@@ -16,10 +16,6 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      # ignore pushes that only change the banner asset
-      # prevents this workflow from triggering itself in a loop
-      - "assets/**"
 
 permissions:
   contents: write
@@ -31,16 +27,11 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 2
-
-      - name: Create assets folder if it does not exist
-        run: mkdir -p assets
 
       - name: Ensure README contains banner
         shell: bash
         run: |
-          BANNER='![Banner](./assets/banner.webp)'
+          BANNER="![Banner](https://raw.githubusercontent.com/${{ github.repository }}/banner/banner.webp)"
 
           # Create README if it doesn't exist
           touch README.md
@@ -52,6 +43,12 @@ jobs:
               cat README.md
             } > README.md.tmp
             mv README.md.tmp README.md
+
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add README.md
+            git commit -m "chore: add banner to README"
+            git push
           fi
 
       - name: Fetch banner image from backend
@@ -63,7 +60,7 @@ jobs:
             -H "X-Banner-Key: ${BANNER_KEY}" \
             -H "repo-name: ${{ github.event.repository.name }}" \
             "${VERCEL_URL}/banner" \
-            --output assets/banner.webp
+            --output /tmp/banner.webp
 
       - name: Commit and push if anything changed
         run: |
@@ -72,16 +69,22 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add assets/banner.webp README.md
+          if git ls-remote --exit-code --heads origin banner >/dev/null 2>&1; then
+            git fetch --depth=1 origin banner
+            git checkout -B banner origin/banner
+          else
+            git checkout --orphan banner
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
 
+          mv /tmp/banner.webp banner.webp
+          git add banner.webp
           git diff --cached --quiet && exit 0
 
-          LAST_COMMIT_MESSAGE=$(git log -1 --pretty=format:%s)
-
-          if [ "$LAST_COMMIT_MESSAGE" = "$COMMIT_MESSAGE" ]; then
+          if git rev-parse --verify HEAD >/dev/null 2>&1; then
             git commit --amend --no-edit --allow-empty
-            git push --force-with-lease
+            git push --force-with-lease origin banner
           else
             git commit -m "$COMMIT_MESSAGE"
-            git push
+            git push origin banner
           fi
