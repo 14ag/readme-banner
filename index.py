@@ -1,5 +1,7 @@
 import os
 import random
+import hashlib
+import asyncio
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
@@ -55,6 +57,14 @@ def serve_image(img_: str) -> Response:
     )
 
 
+# deterministic delay in the server before the db read
+def jitter(string):
+    digest = hashlib.sha256(string.encode("utf-8")).digest()
+    value = int.from_bytes(digest[:8], byteorder="big", signed=False)
+    timer = value % 31
+    asyncio.sleep(timer)
+
+
 def verify_banner_header(x_banner_key: str) -> None:
     expected_key = os.environ.get("BANNER_KEY", "")
     if not x_banner_key or x_banner_key != expected_key:
@@ -69,6 +79,10 @@ async def get_banner(
     # --- step 1: verify the api key ---
     verify_banner_header(x_banner_key)
 
+    # --- step 2: request jitter ---
+    jitter(repo_name)
+
+    # --- step 3: db ---
     db_data = db.get_data()
     rate_result = db_data["rate_limit"]
 
